@@ -1,0 +1,10 @@
+*.code-workspace
+.vscode/
+
+.vs/
+packages/
+*.csproj.user
+*.pubxml.user
+
+bin/
+obj/
