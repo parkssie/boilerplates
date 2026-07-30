@@ -1,10 +1,1 @@
-*.code-workspace
-.vscode/
-
-.vs/
-packages/
-*.csproj.user
-*.pubxml.user
-
-bin/
-obj/
+dotnet-background-worker_backup/
