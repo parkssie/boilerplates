@@ -3,7 +3,7 @@ setlocal EnableExtensions
 
 set "PROJECT_DIR=%~dp0"
 set "PROJECT_FILE=%PROJECT_DIR%DotnetRestApiInfWorker.csproj"
-set "PUBLISH_DIR=%PROJECT_DIR%_publish"
+set "PUBLISH_DIR=%PROJECT_DIR%_publish\windows"
 
 if not exist "%PROJECT_FILE%" (
     echo [ERROR] Project file not found: "%PROJECT_FILE%"
@@ -28,3 +28,4 @@ if errorlevel 1 (
 
 echo [OK] Publish completed: "%PUBLISH_DIR%"
 exit /b 0
+
