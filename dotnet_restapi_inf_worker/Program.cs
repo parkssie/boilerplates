@@ -15,15 +15,6 @@ var settings = builder.Configuration.Get<AppSettings>() ?? new AppSettings();
 builder.Services.AddSingleton(settings);
 builder.Services.AddSingleton<Database>();
 
-builder.Services.AddHttpClient<RestApiClient>(client =>
-{
-    var api = settings.RestApi;
-    client.BaseAddress = new UriBuilder(api.Scheme, api.Host, api.Port).Uri;
-    client.Timeout = TimeSpan.FromSeconds(api.TimeoutSeconds);
-    if (!string.IsNullOrWhiteSpace(api.Token))
-        client.DefaultRequestHeaders.Authorization = new("Bearer", api.Token);
-});
-
 builder.Services.AddHostedService<AppLifecycleService>();
 builder.Services.AddHostedService<InputDataCollector>();
 builder.Services.AddHostedService<SimulationResultPublisher>();

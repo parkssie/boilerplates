@@ -1,10 +1,11 @@
+using System.Net.Http.Headers;
+using System.Text;
 using DotnetRestApiInfWorker.Configuration;
 using DotnetRestApiInfWorker.Data;
 
 namespace DotnetRestApiInfWorker.Services;
 
 public sealed class SimulationResultPublisher(
-    RestApiClient restApiClient,
     Database database,
     AppSettings settings,
     ILogger<SimulationResultPublisher> logger) : BackgroundService
@@ -45,7 +46,7 @@ public sealed class SimulationResultPublisher(
     {
         try
         {
-            await restApiClient.PublishSimulationResultAsync(json, token);
+            await PublishSimulationResultAsync(json, token);
             await database.MarkPublishedAsync(id, token);
             logger.LogInformation("Simulation result {ResultId} published", id);
         }
@@ -58,5 +59,26 @@ public sealed class SimulationResultPublisher(
             logger.LogError(exception, "Simulation result {ResultId} publish failed", id);
             await database.MarkFailedAsync(id, exception.Message, token);
         }
+    }
+
+    private async Task PublishSimulationResultAsync(string json, CancellationToken token)
+    {
+        using HttpClient client = new()
+        {
+            Timeout = TimeSpan.FromSeconds(settings.SimulationResultPublisher.TimeoutSeconds)
+        };
+
+        if (!string.IsNullOrWhiteSpace(settings.SimulationResultPublisher.Token))
+        {
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", settings.SimulationResultPublisher.Token);
+        }
+
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var response = await client.PostAsync(
+            settings.SimulationResultPublisher.Path,
+            content,
+            token);
+        response.EnsureSuccessStatusCode();
     }
 }

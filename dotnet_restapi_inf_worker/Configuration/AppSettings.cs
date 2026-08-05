@@ -2,20 +2,26 @@ namespace DotnetRestApiInfWorker.Configuration;
 
 public sealed class AppSettings
 {
-    public RestApiSettings RestApi { get; set; } = new();
-    public PostgreSqlSettings PostgreSql { get; set; } = new();
     public CollectorSettings InputDataCollector { get; set; } = new();
     public PublisherSettings SimulationResultPublisher { get; set; } = new();
+    public PostgreSqlSettings PostgreSql { get; set; } = new();
 }
 
-public sealed class RestApiSettings
+public sealed class CollectorSettings
 {
-    public string Scheme { get; set; } = "https";
-    public string Host { get; set; } = "localhost";
-    public int Port { get; set; } = 443;
+    public bool Enabled { get; set; } = true;
+    public int IntervalSeconds { get; set; } = 600; // 10 minutes
+    public string Path { get; set; } = "https://localhost:443/api/input-data";
     public string Token { get; set; } = "";
-    public string InputDataPath { get; set; } = "/api/input-data";
-    public string SimulationResultPath { get; set; } = "/api/simulation-results";
+    public int TimeoutSeconds { get; set; } = 30;
+}
+
+public sealed class PublisherSettings
+{
+    public bool Enabled { get; set; } = true;
+    public int ItervalSeconds { get; set; } = 30;
+    public string Path { get; set; } = "https://localhost:443/api/simulation-results";
+    public string Token { get; set; } = "";
     public int TimeoutSeconds { get; set; } = 30;
 }
 
@@ -36,16 +42,4 @@ public sealed class PostgreSqlSettings
     public int KeepAliveSeconds { get; set; } = 30;
     public string ApplicationName { get; set; } = "DotnetRestApiInfWorker";
     public Dictionary<string, string> AdditionalOptions { get; set; } = [];
-}
-
-public sealed class CollectorSettings
-{
-    public bool Enabled { get; set; } = true;
-    public int MinuteOfHour { get; set; } = 10;
-}
-
-public sealed class PublisherSettings
-{
-    public bool Enabled { get; set; } = true;
-    public int ItervalSeconds { get; set; } = 30;
 }
