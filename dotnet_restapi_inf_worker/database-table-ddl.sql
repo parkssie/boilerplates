@@ -892,3 +892,19 @@ CREATE TABLE public.data_sim (
 );
 CREATE INDEX data_sim_dt_update_desc_sim_cd_stn_cd_idx ON public.data_sim USING btree (dt_update DESC, sim_cd, stn_cd);
 CREATE INDEX data_sim_stn_cd_dt_update_desc_updated_by_idx ON public.data_sim USING btree (stn_cd, dt_update DESC, updated_by);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CREATE TABLE public.data_sim_result (
+	stn_cd text NOT NULL,
+	sim_cd text NOT NULL,
+	dt timestamptz NULL,
+	dt_update timestamptz DEFAULT now() NULL,
+	layout_id text NOT NULL,
+	node_id int4 NOT NULL,
+	flow_id text NOT NULL,
+	map_id text NULL,
+	sim_data jsonb DEFAULT '{}'::jsonb NULL,
+	CONSTRAINT data_sim_result_pk PRIMARY KEY (stn_cd, sim_cd, layout_id, node_id, flow_id)
+);
+CREATE INDEX data_sim_result_dt_desc_idx ON public.data_sim_result USING btree (dt DESC) WHERE dt IS NOT NULL;

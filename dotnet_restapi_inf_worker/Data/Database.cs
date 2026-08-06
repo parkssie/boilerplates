@@ -304,45 +304,40 @@ public sealed class Database : IAsyncDisposable
 
     #region Simulation
 
-    public async Task<List<(long Id, string Json)>> GetPendingResultsAsync(CancellationToken token)
+    public async Task<List<SimulationResult>> LoadSimulationResultsAsync(CancellationToken token)
     {
         await using var command = _dataSource.CreateCommand(
-            "SELECT id, payload::text FROM simulation_results " +
-            "WHERE published_at IS NULL ORDER BY created_at LIMIT 100");
+            """
+            SELECT
+                stn_cd,
+                sim_cd,
+                layout_id,
+                node_id,
+                flow_id,
+                COALESCE(pg_column_size(sim_data), 0) AS sim_data_size_bytes,
+                to_jsonb(data_sim_result)::text AS payload
+            FROM public.data_sim_result
+            WHERE dt = (
+                SELECT MAX(dt)
+                FROM public.data_sim_result
+            )
+            """);
         await using var reader = await command.ExecuteReaderAsync(token);
 
-        var results = new List<(long, string)>();
+        var results = new List<SimulationResult>();
         while (await reader.ReadAsync(token))
-            results.Add((reader.GetInt64(0), reader.GetString(1)));
+        {
+            results.Add(new SimulationResult(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetInt32(3),
+                reader.GetString(4),
+                reader.GetInt32(5),
+                reader.GetString(6)));
+        }
 
         return results;
-    }
-
-    public async Task MarkPublishedAsync(long id, CancellationToken token)
-    {
-        await ExecuteAsync(
-            "UPDATE simulation_results SET published_at = now(), last_error = NULL WHERE id = @id",
-            id,
-            null,
-            token);
-    }
-
-    public async Task MarkFailedAsync(long id, string error, CancellationToken token)
-    {
-        await ExecuteAsync(
-            "UPDATE simulation_results SET publish_attempts = publish_attempts + 1, last_error = @error WHERE id = @id",
-            id,
-            error.Length > 1000 ? error[..1000] : error,
-            token);
-    }
-
-    private async Task ExecuteAsync(string sql, long id, string? error, CancellationToken token)
-    {
-        await using var command = _dataSource.CreateCommand(sql);
-        command.Parameters.AddWithValue("id", id);
-        if (error is not null)
-            command.Parameters.AddWithValue("error", error);
-        await command.ExecuteNonQueryAsync(token);
     }
 
     #endregion
@@ -352,3 +347,12 @@ public sealed class Database : IAsyncDisposable
         await _dataSource.DisposeAsync();
     }
 }
+
+public sealed record SimulationResult(
+    string StnCd,
+    string SimCd,
+    string LayoutId,
+    int NodeId,
+    string FlowId,
+    int SimDataSizeBytes,
+    string Json);

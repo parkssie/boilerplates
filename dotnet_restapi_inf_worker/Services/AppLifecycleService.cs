@@ -4,18 +4,18 @@ public sealed class AppLifecycleService(ILogger<AppLifecycleService> logger) : I
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("app start");
+        logger.LogInformation("Application started");
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("app stop");
+        logger.LogInformation("Application stopped");
         return Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        logger.LogInformation("app disposed");
+        logger.LogInformation("Application disposed");
     }
 }

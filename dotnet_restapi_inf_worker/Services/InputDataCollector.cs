@@ -160,7 +160,7 @@ public sealed class InputDataCollector(
 
                         // 7. 결과 저장
                         await database.SaveInputAsync(inputConfig, inputData, token);
-                        logger.LogInformation($"Input data saved");
+                        logger.LogInformation("Input data saved");
 
                         if (requestToDt >= toDt)
                             break;

@@ -10,17 +10,32 @@ public sealed class SimulationResultPublisher(
     AppSettings settings,
     ILogger<SimulationResultPublisher> logger) : BackgroundService
 {
+    private const int TemporarySimDataSizeLimitBytes = 200;
+
     protected override async Task ExecuteAsync(CancellationToken token)
     {
         var options = settings.SimulationResultPublisher;
         if (!options.Enabled) return;
 
+        if (options.RequestIntervalSec <= 0)
+            throw new InvalidOperationException("RequestIntervalSec must be greater than 0");
+
+        using HttpClient client = new()
+        {
+            Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSec)
+        };
+
+        if (!string.IsNullOrWhiteSpace(options.RequestToken))
+        {
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", options.RequestToken);
+        }
+
         while (!token.IsCancellationRequested)
         {
             try
             {
-                foreach (var result in await database.GetPendingResultsAsync(token))
-                    await PublishAsync(result.Id, result.Json, token);
+                var results = await database.LoadSimulationResultsAsync(token);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
@@ -33,7 +48,7 @@ public sealed class SimulationResultPublisher(
 
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(options.ItervalSeconds), token);
+                await Task.Delay(TimeSpan.FromSeconds(options.RequestIntervalSec), token);
             }
             catch (OperationCanceledException)
             {
@@ -42,13 +57,27 @@ public sealed class SimulationResultPublisher(
         }
     }
 
-    private async Task PublishAsync(long id, string json, CancellationToken token)
+    private async Task PublishAsync(
+        HttpClient client,
+        SimulationResult result,
+        CancellationToken token)
     {
         try
         {
-            await PublishSimulationResultAsync(json, token);
-            await database.MarkPublishedAsync(id, token);
-            logger.LogInformation("Simulation result {ResultId} published", id);
+            using var content = new StringContent(result.Json, Encoding.UTF8, "application/json");
+            using var response = await client.PostAsync(
+                settings.SimulationResultPublisher.RequestPath,
+                content,
+                token);
+            response.EnsureSuccessStatusCode();
+
+            logger.LogInformation(
+                "Simulation result published. StnCd: {StnCd}, SimCd: {SimCd}, LayoutId: {LayoutId}, NodeId: {NodeId}, FlowId: {FlowId}",
+                result.StnCd,
+                result.SimCd,
+                result.LayoutId,
+                result.NodeId,
+                result.FlowId);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -56,29 +85,14 @@ public sealed class SimulationResultPublisher(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Simulation result {ResultId} publish failed", id);
-            await database.MarkFailedAsync(id, exception.Message, token);
+            logger.LogError(
+                exception,
+                "Simulation result publish failed. StnCd: {StnCd}, SimCd: {SimCd}, LayoutId: {LayoutId}, NodeId: {NodeId}, FlowId: {FlowId}",
+                result.StnCd,
+                result.SimCd,
+                result.LayoutId,
+                result.NodeId,
+                result.FlowId);
         }
-    }
-
-    private async Task PublishSimulationResultAsync(string json, CancellationToken token)
-    {
-        using HttpClient client = new()
-        {
-            Timeout = TimeSpan.FromSeconds(settings.SimulationResultPublisher.RequestTimeoutSec)
-        };
-
-        if (!string.IsNullOrWhiteSpace(settings.SimulationResultPublisher.RequestToken))
-        {
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", settings.SimulationResultPublisher.RequestToken);
-        }
-
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
-        using var response = await client.PostAsync(
-            settings.SimulationResultPublisher.RequestPath,
-            content,
-            token);
-        response.EnsureSuccessStatusCode();
     }
 }

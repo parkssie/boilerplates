@@ -23,7 +23,7 @@ public sealed class CollectorSettings
 public sealed class PublisherSettings
 {
     public bool Enabled { get; set; } = true;
-    public int ItervalSeconds { get; set; } = 30;
+    public int RequestIntervalSec { get; set; } = 10;
     public string RequestPath { get; set; } = "https://localhost:443/api/simulation-results";
     public string RequestToken { get; set; } = "";
     public int RequestTimeoutSec { get; set; } = 30;
