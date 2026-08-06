@@ -10,19 +10,23 @@ public sealed class AppSettings
 public sealed class CollectorSettings
 {
     public bool Enabled { get; set; } = true;
-    public int IntervalSeconds { get; set; } = 600; // 10 minutes
-    public string Path { get; set; } = "https://localhost:443/api/input-data";
-    public string Token { get; set; } = "";
-    public int TimeoutSeconds { get; set; } = 30;
+    public int PayloadToDtDelayMin { get; set; } = 30; // toDt의 delay (예: 현재 13:10 이고 30m 이면 toDt를 12:40 으로)
+    public int PayloadDtRangeMin { get; set; } = 10; // fromDt와 toDt 를 나눠서 API 호출하기 위한 기준변수 (min)
+    public string PayloadDtType { get; set; } = "<data-type>";
+    public string PayloadDataKind { get; set; } = "<data-kind>";
+    public string RequestPath { get; set; } = "https://localhost:443/api/input-data";
+    public string RequestToken { get; set; } = "";
+    public int RequestIntervalSec { get; set; } = 600; // 10 minutes
+    public int RequestTimeoutSec { get; set; } = 30;
 }
 
 public sealed class PublisherSettings
 {
     public bool Enabled { get; set; } = true;
     public int ItervalSeconds { get; set; } = 30;
-    public string Path { get; set; } = "https://localhost:443/api/simulation-results";
-    public string Token { get; set; } = "";
-    public int TimeoutSeconds { get; set; } = 30;
+    public string RequestPath { get; set; } = "https://localhost:443/api/simulation-results";
+    public string RequestToken { get; set; } = "";
+    public int RequestTimeoutSec { get; set; } = 30;
 }
 
 public sealed class PostgreSqlSettings

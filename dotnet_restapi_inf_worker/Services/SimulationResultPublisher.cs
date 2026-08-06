@@ -65,18 +65,18 @@ public sealed class SimulationResultPublisher(
     {
         using HttpClient client = new()
         {
-            Timeout = TimeSpan.FromSeconds(settings.SimulationResultPublisher.TimeoutSeconds)
+            Timeout = TimeSpan.FromSeconds(settings.SimulationResultPublisher.RequestTimeoutSec)
         };
 
-        if (!string.IsNullOrWhiteSpace(settings.SimulationResultPublisher.Token))
+        if (!string.IsNullOrWhiteSpace(settings.SimulationResultPublisher.RequestToken))
         {
             client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", settings.SimulationResultPublisher.Token);
+                new AuthenticationHeaderValue("Bearer", settings.SimulationResultPublisher.RequestToken);
         }
 
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
         using var response = await client.PostAsync(
-            settings.SimulationResultPublisher.Path,
+            settings.SimulationResultPublisher.RequestPath,
             content,
             token);
         response.EnsureSuccessStatusCode();
